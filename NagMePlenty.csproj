@@ -177,6 +177,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="README.md" />
     <None Include="Scripts\bower.json" />
     <None Include="Scripts\build.log" />
   </ItemGroup>
