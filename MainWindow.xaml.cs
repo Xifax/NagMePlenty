@@ -1,8 +1,13 @@
 ﻿using NHotkey.WindowsForms;
 using System;
+using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Forms;
+using System.Windows.Threading;
 
 namespace NagMePlenty
 {
@@ -12,6 +17,7 @@ namespace NagMePlenty
         private const String APP_ID = "NagMePlenty";
         Toaster toaster;
         Reader reader;
+        DispatcherTimer timer;
 
         // Initialize the application
         public MainWindow()
@@ -21,7 +27,44 @@ namespace NagMePlenty
             new ShortcutHelper(APP_ID).InitShortcut();
             toaster = new Toaster(APP_ID);
             reader = new Reader();
-            reader.LoadFile();
+
+            /* Load settings */
+
+            // Interval
+            intervalSlider.Value = Properties.Settings.Default.Interval;
+            intervalLabel.Content = String.Format("Every {0} minute(s)", (int)intervalSlider.Value);
+            
+            // Stats
+            totalShown.Content = String.Format("Total items shown: {0}", Properties.Settings.Default.StatsTotalShown);
+            totalUptime.Content = String.Format("Total uptime: {0}", String.Format("{0:hh\\:mm\\:ss}",
+                TimeSpan.FromSeconds(Properties.Settings.Default.StatsUptime)));
+
+            // Files
+            loadLocalFiles.SetCurrentValue(
+                System.Windows.Controls.CheckBox.IsCheckedProperty,
+                Properties.Settings.Default.LoadLocalFiles);
+            if (Properties.Settings.Default.LoadLocalFiles)
+            {
+                reader.LoadPath();
+            }
+
+            // Load files
+            if (Properties.Settings.Default.Files != null)
+            {
+                foreach (String file in Properties.Settings.Default.Files)
+                {
+                    // Load items
+                    reader.LoadFile(file);
+                    // Update file list
+                    ListBoxItem item = new ListBoxItem();
+                    item.Content = file;
+                    fileList.Items.Add(item);
+                }
+            } else
+            {
+                Properties.Settings.Default.Files = new System.Collections.Specialized.StringCollection();
+                Properties.Settings.Default.Save();
+            }
 
             // Hotkeys
             HotkeyManager.Current.AddOrReplace("Increment",
@@ -42,11 +85,13 @@ namespace NagMePlenty
             };
 
             // Initialize timer
-            System.Windows.Threading.DispatcherTimer dispatcherTimer = 
-                new System.Windows.Threading.DispatcherTimer();
-            dispatcherTimer.Tick += ShowToast;
-            dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
-            dispatcherTimer.Start();
+            timer = new DispatcherTimer();
+            timer.Tick += ShowToast;
+            timer.Interval = new TimeSpan(
+                0, // hours
+                Properties.Settings.Default.Interval, // minutes
+                0); // seconds
+            timer.Start();
         }
 
         // Update window status
@@ -64,47 +109,97 @@ namespace NagMePlenty
         private void ShowToast(object sender, EventArgs e)
         {
             toaster.showToast(reader.getRandomItem());
+
+            // Update stats and labels
+            Properties.Settings.Default.StatsTotalShown += 1;
+            Properties.Settings.Default.Save();
+            totalShown.Content = String.Format("Total items shown: {0}", Properties.Settings.Default.StatsTotalShown);
         }
 
-        /*
-        private void toastactivated(toastnotification sender, object e)
-        {
-            dispatcher.invoke(() =>
-            {
-                activate();
-                output.text = "the user activated the toast.";
-            });
-        }
+        /* Events */
 
-        private void toastdismissed(toastnotification sender, toastdismissedeventargs e)
+        private void addFiles(object sender, RoutedEventArgs e)
         {
-            string outputtext = "";
-            switch (e.reason)
+            // Create an instance of the open file dialog box.
+            OpenFileDialog selectFiles = new OpenFileDialog();
+
+            // Set filter options and filter index.
+            selectFiles.Filter = "Text Files (.txt)|*.txt";
+            selectFiles.FilterIndex = 1;
+
+            selectFiles.Multiselect = true;
+
+            // Process input if the user clicked OK.
+            if (selectFiles.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                case toastdismissalreason.applicationhidden:
-                    outputtext = "the app hid the toast using toastnotifier.hide";
-                    break;
-                case toastdismissalreason.usercanceled:
-                    outputtext = "the user dismissed the toast";
-                    break;
-                case toastdismissalreason.timedout:
-                    outputtext = "the toast has timed out";
-                    break;
+                // Open the selected file to read.
+                foreach(String file in selectFiles.FileNames)
+                {
+                    // Update list
+                    ListBoxItem item = new ListBoxItem();
+                    item.Content = file;
+                    fileList.Items.Add(item);
+
+                    // Load file contents
+                    reader.LoadFile(file);
+
+                    // Update settings
+                    Properties.Settings.Default.Files.Add(file);
+                    Properties.Settings.Default.Save();
+                }
+
             }
-
-            dispatcher.invoke(() =>
-            {
-                output.text = outputtext;
-            });
         }
 
-        private void ToastFailed(ToastNotification sender, ToastFailedEventArgs e)
+        // Double click to remove file from list & configuration
+        private void fileList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            Dispatcher.Invoke(() =>
+            if (fileList.SelectedItem != null)
             {
-                Output.Text = "The toast encountered an error.";
-            });
+                String item = ((ListBoxItem)fileList.SelectedItem).Content.ToString();
+                Properties.Settings.Default.Files.Remove(item);
+                Properties.Settings.Default.Save();
+                fileList.Items.Remove(fileList.SelectedItem);
+            }
         }
-        */
+
+        /* Update config: load files from program folder */
+
+        private void loadLocalFiles_Checked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.LoadLocalFiles = true;
+            Properties.Settings.Default.Save();
+        }
+
+        private void loadLocalFiles_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.LoadLocalFiles = false;
+            Properties.Settings.Default.Save();
+        }
+
+        // Update interval value
+        private void intervalUpdated(object sender, DragCompletedEventArgs e)
+        {
+            intervalLabel.Content = String.Format("Every {0} minute(s)", (int)intervalSlider.Value);
+            Properties.Settings.Default.Interval = (int)intervalSlider.Value;
+            Properties.Settings.Default.Save();
+
+            // Restart timer
+            timer.Stop();
+            timer.Interval = new TimeSpan(
+                0, // hours
+                (int)intervalSlider.Value, // minutes
+                0); // seconds
+            timer.Start();
+        }
+
+        /* On exit */
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Perform tasks at application exit
+            Properties.Settings.Default.StatsUptime += 
+                (int)(DateTime.Now - Process.GetCurrentProcess().StartTime).TotalSeconds;
+            Properties.Settings.Default.Save();
+        }
     }
 }

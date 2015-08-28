@@ -54,15 +54,51 @@ namespace NagMePlenty
             // Create the toast and attach event listeners
             ToastNotification toast = new ToastNotification(toastXml);
 
-            /*
-            toast.Activated += ToastActivated;
-            toast.Dismissed += ToastDismissed;
-            toast.Failed += ToastFailed;
-            */
-
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
             notifier.Show(toast);
             return toast;
         }
+
+
+        /*
+        private void toastactivated(toastnotification sender, object e)
+        {
+            dispatcher.invoke(() =>
+            {
+                activate();
+                output.text = "the user activated the toast.";
+            });
+        }
+
+        private void toastdismissed(toastnotification sender, toastdismissedeventargs e)
+        {
+            string outputtext = "";
+            switch (e.reason)
+            {
+                case toastdismissalreason.applicationhidden:
+                    outputtext = "the app hid the toast using toastnotifier.hide";
+                    break;
+                case toastdismissalreason.usercanceled:
+                    outputtext = "the user dismissed the toast";
+                    break;
+                case toastdismissalreason.timedout:
+                    outputtext = "the toast has timed out";
+                    break;
+            }
+
+            dispatcher.invoke(() =>
+            {
+                output.text = outputtext;
+            });
+        }
+
+        private void ToastFailed(ToastNotification sender, ToastFailedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Output.Text = "The toast encountered an error.";
+            });
+        }
+        */
     }
 }

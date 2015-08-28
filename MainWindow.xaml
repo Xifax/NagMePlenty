@@ -1,9 +1,32 @@
 ﻿<Window x:Class="NagMePlenty.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Nag Me Plenty configuration" Height="166.667" Width="300">
-    <StackPanel Orientation="Vertical" Margin="0,0,0.333,-2">
-        <Slider x:Name="slider" Margin="10"/>
-        <Label x:Name="label" Content="30s" Margin="83,0,67.333,0" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Roboto Thin" FontSize="74.667" Panel.ZIndex="2"/>
+        Title="Nag Me Plenty configuration" Height="325.555" Width="368" Closing="Window_Closing">
+    <StackPanel Orientation="Vertical" Margin="0,0,0.333,31.667">
+        <TabControl x:Name="tabControl" Height="258" Margin="0,0,0.333,0">
+            <TabItem Header="Interval">
+                <Grid HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch" Margin="10,10,0,0" VerticalAlignment="Center">
+                        <Slider x:Name="intervalSlider" Maximum="60" Minimum="1" TickPlacement="TopLeft" AutoToolTipPlacement="TopLeft" SmallChange="1" Thumb.DragCompleted="intervalUpdated"/>
+                        <Label x:Name="intervalLabel" Content="Every 5 minute(s)" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Roboto Thin" FontSize="26.667"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Files">
+                <Grid HorizontalAlignment="Stretch">
+                    <ListBox x:Name="fileList" HorizontalAlignment="Stretch" Height="154" Margin="15,35,10.333,0" VerticalAlignment="Top" MouseDoubleClick="fileList_MouseDoubleClick" ToolTip="Remove files by double clicking on them"/>
+                    <Button x:Name="addFile" Content="Add files" HorizontalAlignment="Stretch" Margin="15,10,10.333,0" VerticalAlignment="Top" RenderTransformOrigin="-0.065,0.089" Click="addFiles"/>
+                    <CheckBox x:Name="loadLocalFiles" Content="Load files in program folder" HorizontalAlignment="Left" Margin="15,201,0,0" VerticalAlignment="Top" Width="262" Checked="loadLocalFiles_Checked" Unchecked="loadLocalFiles_Unchecked"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Stats">
+                <Grid HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch" Margin="10,10,0,0" VerticalAlignment="Center">
+                        <Label x:Name="totalShown" Content="Label" FontFamily="Roboto Thin" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        <Label x:Name="totalUptime" Content="Label" FontFamily="Roboto Thin" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </StackPanel>
 </Window>

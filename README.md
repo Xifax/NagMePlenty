@@ -13,3 +13,6 @@ TODO:
 - sound notification
 - cleanup
 - merge assembly
+- time to next item
+- show again control
+- custom font and layout for toast
